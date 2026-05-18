@@ -1918,7 +1918,7 @@ body.show-report #main-site-wrap{display:none;}
 <script>
   const labels = ['Logo & Visual Mark','Color & Typography','Brand Consistency','Content Quality','Messaging & Voice','Professional Presence'];
 
-  function generateReport() {
+  async function generateReport() {
     const name = document.getElementById('biz-name').value.trim() || 'Your Brand';
     const industry = document.getElementById('industry').value || 'Your Industry';
     const challenge = document.getElementById('challenge').value.trim();
@@ -1935,24 +1935,54 @@ body.show-report #main-site-wrap{display:none;}
     const loading = document.getElementById('loading');
     loading.style.display = 'block';
 
-    setTimeout(() => {
+    setTimeout(async () => {
       loading.style.display = 'none';
-      buildReport(name, industry, scores, avg, challenge, contactName, contactEmail, contactPhone);
+      const reportContext = buildReport(name, industry, scores, avg, challenge, contactName, contactEmail, contactPhone);
 
-      // fire complete lead notification
-      captureCompleteLead({
+      const userFacingAttachment = generateUserFacingReportAttachment({
+        businessName: name,
+        industry,
+        contactName,
+        contactEmail,
+        contactPhone,
+        score: parseFloat(avg),
+        grade: reportContext.grade,
+        findings: reportContext.findings,
+      });
+      const internalSalesAttachment = generateInternalSalesReportAttachment({
+        businessName: name,
+        industry,
+        customerDescription: document.getElementById('customer').value.trim(),
+        challenge,
+        scores,
+        averageScore: parseFloat(avg),
+        strengths: reportContext.strengths,
+        weakAreas: reportContext.weakAreas,
+        recommendations: reportContext.recommendations,
+        suggestedServices: reportContext.suggestedServices,
+        salesCallTalkingPoints: reportContext.salesCallTalkingPoints,
+        estimatedTimeline: reportContext.estimatedTimeline,
+        estimatedCostRange: reportContext.estimatedCostRange,
+      });
+
+      await captureCompleteLead({
+        business_name: name,
         contact_name: contactName,
         contact_email: contactEmail,
         contact_phone: document.getElementById('contact-phone').value.trim(),
-        contact_role: document.getElementById('contact-role').value.trim(),
-        biz_name: name,
-        industry: industry,
-        website: document.getElementById('website').value.trim(),
-        social: document.getElementById('social').value,
-        challenge: challenge,
-        customer: document.getElementById('customer').value.trim(),
-        scores: scores,
-        avg_score: parseFloat(avg),
+        industry,
+        customer_description: document.getElementById('customer').value.trim(),
+        challenge,
+        scores,
+        average_score: parseFloat(avg),
+        strengths: reportContext.strengths,
+        weak_areas: reportContext.weakAreas,
+        recommendations: reportContext.recommendations,
+        suggested_services: reportContext.suggestedServices,
+        sales_call_talking_points: reportContext.salesCallTalkingPoints,
+        estimated_timeline: reportContext.estimatedTimeline,
+        estimated_cost_range: reportContext.estimatedCostRange,
+        attachments: [userFacingAttachment, internalSalesAttachment],
         submitted_at: new Date().toUTCString(),
       });
     }, 1800);
@@ -2110,6 +2140,90 @@ body.show-report #main-site-wrap{display:none;}
         b.style.width = b.dataset.pct + '%';
       });
     }, 100);
+
+    const weakAreas = [labels[lowIdx]];
+    const strengths = [labels[highIdx]];
+    const recommendations = [nextBody, insightBody];
+    const suggestedServices = [
+      'Brand Identity Design',
+      'Content Strategy & Creation',
+      'Visual Messaging System',
+      'Brand Consistency Audit',
+    ];
+    const salesCallTalkingPoints = [
+      `Lead with the biggest opportunity: ${oppData.title}.`,
+      `Reinforce current strength: ${strCopy[highIdx].title}.`,
+      `Present the primary engagement path: ${nextTitle}.`,
+    ];
+    const estimatedTimeline = parseFloat(avg) <= 2 ? '2-4 weeks' : parseFloat(avg) <= 3 ? '4-6 weeks' : '6-8 weeks';
+    const estimatedCostRange = parseFloat(avg) <= 2 ? '$4,000-$7,500' : parseFloat(avg) <= 3 ? '$7,500-$12,000' : '$12,000-$20,000';
+
+    return {
+      findings,
+      strengths,
+      weakAreas,
+      recommendations,
+      suggestedServices,
+      salesCallTalkingPoints,
+      estimatedTimeline,
+      estimatedCostRange,
+      grade: el('out-grade').textContent,
+    };
+  }
+  function sanitizeFilenamePart(value) {
+    return (value || 'Business').replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'Business';
+  }
+
+  function generateUserFacingReportAttachment(data) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const fileBase = sanitizeFilenamePart(data.businessName);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('Pinnacle Brand View Report', 14, 20);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+    const lines = [
+      `Business: ${data.businessName}`,
+      `Industry: ${data.industry}`,
+      `Contact: ${[data.contactName, data.contactEmail, data.contactPhone].filter(Boolean).join(' | ')}`,
+      `Average Score: ${data.score}/5 (${data.grade})`,
+      '',
+      'Key Findings:',
+      ...data.findings.map((f, i) => `${i + 1}. ${f.title} - ${f.body}`),
+    ];
+    doc.text(doc.splitTextToSize(lines.join('\n'), 180), 14, 32);
+    return {
+      filename: `Pinnacle-Brand-View-Report-${fileBase}.pdf`,
+      content_base64: doc.output('datauristring').split(',')[1],
+      mime_type: 'application/pdf',
+    };
+  }
+
+  function generateInternalSalesReportAttachment(data) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const fileBase = sanitizeFilenamePart(data.businessName);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('Pinnacle Internal Sales Report', 14, 20);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+    const lines = [
+      `Business: ${data.businessName}`,
+      `Industry: ${data.industry}`,
+      `Customer Description: ${data.customerDescription || 'N/A'}`,
+      `Challenge: ${data.challenge || 'N/A'}`,
+      `Scores: ${data.scores.join(', ')}`,
+      `Average Score: ${data.averageScore}/5`,
+      `Strengths: ${data.strengths.join('; ')}`,
+      `Weak Areas: ${data.weakAreas.join('; ')}`,
+      `Recommendations: ${data.recommendations.join(' | ')}`,
+      `Suggested Services: ${data.suggestedServices.join(' | ')}`,
+      `Sales-call Talking Points: ${data.salesCallTalkingPoints.join(' | ')}`,
+      `Estimated Timeline: ${data.estimatedTimeline}`,
+      `Estimated Cost Range: ${data.estimatedCostRange}`,
+    ];
+    doc.text(doc.splitTextToSize(lines.join('\n'), 180), 14, 32);
+    return {
+      filename: `Pinnacle-Internal-Sales-Report-${fileBase}.pdf`,
+      content_base64: doc.output('datauristring').split(',')[1],
+      mime_type: 'application/pdf',
+    };
   }
 
   // ── API CONFIG ──
