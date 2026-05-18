@@ -1572,9 +1572,9 @@ body.show-report #main-site-wrap{display:none;}
   <h2 class="cta-title">Let's build something<br/><em>remarkable together.</em></h2>
   <p class="cta-sub">Tell us what you need. We'll scope it, price it, and deliver it — faster than you thought possible.</p>
   <div class="cta-actions">
-    <a href="mailto:hello@pinnaclecontentstudio.com" class="btn-primary">Start a Project</a>
+    <a href="mailto:amin@pinnaclecontentstudio.com" class="btn-primary">Start a Project</a>
     <a href="#" onclick="showReport();return false;" class="btn-ghost" style="border-color:var(--gold);color:var(--gold);">Get a Free Brand Report</a>
-    <a href="https://calendly.com" target="_blank" class="btn-ghost">Book a Free Call</a>
+    <a href="https://calendar.google.com/calendar/u/0/appointments/schedules/REPLACE_WITH_MY_REAL_LINK" target="_blank" class="btn-ghost">Book a Free Call</a>
   </div>
 </section>
 
@@ -1589,7 +1589,7 @@ body.show-report #main-site-wrap{display:none;}
     <a href="#process">Process</a>
     <a href="#pricing">Pricing</a>
     <a href="#" onclick="showReport();return false;">Free Brand Report</a>
-    <a href="mailto:hello@pinnaclecontentstudio.com">Contact</a>
+    <a href="mailto:amin@pinnaclecontentstudio.com">Contact</a>
   </div>
   <div class="footer-copy">© 2026 Pinnacle Content Studio<br/>All rights reserved.</div>
 </footer>
@@ -1633,7 +1633,7 @@ body.show-report #main-site-wrap{display:none;}
 
     <div class="hero-footer">
       <div class="stat">
-        <div class="stat-num">7</div>
+        <div class="stat-num">6</div>
         <div class="stat-label">Brand dimensions scored</div>
       </div>
       <div class="stat">
@@ -1870,7 +1870,7 @@ body.show-report #main-site-wrap{display:none;}
       <div class="cta-block">
         <a href="#" onclick="showMain();document.getElementById('cta').scrollIntoView({behavior:'smooth'});return false;" class="btn-primary" style="display:inline-block;text-decoration:none;">Book a Free Discovery Call →</a>
         <button class="btn-outline" onclick="downloadPDF()">Download PDF Report</button>
-        <div class="contact-note">hello@pinnaclecontent.studio</div>
+        <div class="contact-note">amin@pinnaclecontentstudio.com</div>
       </div>
     </div>
 
@@ -1959,7 +1959,7 @@ body.show-report #main-site-wrap{display:none;}
     const highIdx = scores.indexOf(Math.max(...scores));
     const lowScore  = scores[lowIdx];
     const highScore = scores[highIdx];
-    const avg       = parseFloat(g);
+    const avgNum    = parseFloat(g);
 
     // Per-dimension opportunity copy (keyed by index, then score band: 1-2 = weak, 3 = mid, 4-5 = strong)
     const oppCopy = [
@@ -2017,10 +2017,10 @@ body.show-report #main-site-wrap{display:none;}
     // Insight - based on score spread and overall avg
     const spread = Math.max(...scores) - Math.min(...scores);
     let insightTitle, insightBody;
-    if (avg <= 2) {
+    if (avgNum <= 2) {
       insightTitle = 'Every dimension is an opportunity';
       insightBody  = `With scores across the board in the lower range, ${name} has the clearest possible brief: everything needs attention, and the order of operations matters. Start with identity, then messaging, then content — that sequence builds on itself.`;
-    } else if (avg >= 4) {
+    } else if (avgNum >= 4) {
       insightTitle = 'You are operating at a high level — the risk is complacency';
       insightBody  = `Strong scores across all dimensions are rare. The threat at this stage is not weakness but drift — as you scale, brand standards erode quietly unless they are codified and enforced. Document everything.`;
     } else if (spread >= 3) {
@@ -2033,10 +2033,10 @@ body.show-report #main-site-wrap{display:none;}
 
     // Next step - based on avg
     let nextTitle, nextBody;
-    if (avg <= 2) {
+    if (avgNum <= 2) {
       nextTitle = 'Start with a Brand Foundation Sprint';
       nextBody  = `For ${name}, the right move is a structured brand foundation — logo, color, type, and core messaging locked down first. Everything else built on top. We do this in a single focused engagement so you have a complete system in days, not months.`;
-    } else if (avg <= 3) {
+    } else if (avgNum <= 3) {
       nextTitle = 'A Brand Elevation engagement is your next move';
       nextBody  = `${name} has the raw materials. What is missing is refinement, systematisation, and consistency. Our Brand Elevation engagement audits what exists, identifies the highest-leverage gaps, and closes them with production-ready assets across every key touchpoint.`;
     } else {
@@ -2385,7 +2385,7 @@ function downloadPDF() {
   reg(9); setTextColor([176,168,152]);
   doc.text('Book a free 30-minute Discovery Call and map out your brand transformation.', margin + 8, y + 17);
   mono(8); setTextColor(GOLD);
-  doc.text('hello@pinnaclecontentstudio.com', margin + 8, y + 23);
+  doc.text('amin@pinnaclecontentstudio.com', margin + 8, y + 23);
 
   // footer
   y = H - 12;
