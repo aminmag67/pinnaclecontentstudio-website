@@ -1192,6 +1192,39 @@
 #brand-report-page{display:none;}
 body.show-report #brand-report-page{display:block;}
 body.show-report #main-site-wrap{display:none;}
+
+  /* ── PDF/PRINT EXPORT OVERRIDES (screen unaffected) ── */
+  @media print {
+    body.pdf-export #brand-report-page {
+      background: #0a0f1e !important;
+      width: 8.5in !important;
+      max-width: 8.5in !important;
+      margin: 0 auto !important;
+      padding: 0.3in !important;
+    }
+
+    body.pdf-export .report-card,
+    body.pdf-export .finding-card,
+    body.pdf-export .score-card,
+    body.pdf-export .report-section,
+    body.pdf-export .report-section p,
+    body.pdf-export .report-section li {
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
+    }
+
+    body.pdf-export .finding-card h3,
+    body.pdf-export .finding-card p {
+      font-size: 92% !important;
+      line-height: 1.4 !important;
+      margin-bottom: 0.4rem !important;
+    }
+
+    body.pdf-export .report-section {
+      margin-bottom: 14px !important;
+      padding-bottom: 8px !important;
+    }
+  }
 </style>
 </head>
 <body><div id="main-site-wrap">
@@ -2151,6 +2184,7 @@ function showMain() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 function downloadPDF() {
+  document.body.classList.add('pdf-export');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -2170,6 +2204,21 @@ function downloadPDF() {
 
   // helpers
   function setFill(rgb)   { doc.setFillColor(...rgb); }
+  function ensureSpace(requiredHeight, bottomPad = 14) {
+    if (y + requiredHeight > H - bottomPad) {
+      doc.addPage();
+      setFill(INK); doc.rect(0, 0, W, H, 'F');
+      setFill(GOLD); doc.rect(0, 0, W, 2, 'F');
+      y = 16;
+      mono(7); setTextColor(GOLD);
+      doc.text('PINNACLE CONTENT STUDIO', margin, y);
+      doc.text('BRAND VIEW REPORT™', W - margin, y, { align: 'right' });
+      y += 3;
+      setDraw([40, 40, 50]); doc.setLineWidth(0.3);
+      doc.line(margin, y, W - margin, y);
+      y += 8;
+    }
+  }
   function setDraw(rgb)   { doc.setDrawColor(...rgb); }
   function setTextColor(rgb) { doc.setTextColor(...rgb); }
   function mono(size)  { doc.setFont('courier', 'normal'); doc.setFontSize(size); }
@@ -2278,18 +2327,13 @@ function downloadPDF() {
   y += 70;
 
   // ── FINDINGS ──
+  ensureSpace(24);
   mono(7); setTextColor(GOLD);
   doc.text('03 — KEY FINDINGS', margin, y);
-  y += 5;
+  y += 6;
 
-  const findingCards = document.querySelectorAll('.finding-card');
-  const CARD_H = 44;
-  findingCards.forEach((card, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = margin + col * (colW + 8);
-    const fy = y + row * (CARD_H + 4);
-
+  const findingCards = Array.from(document.querySelectorAll('.finding-card'));
+  findingCards.forEach((card) => {
     const typeEl = card.querySelector('.finding-type');
     const titleEl = card.querySelector('h3');
     const bodyEl  = card.querySelector('p');
@@ -2297,24 +2341,30 @@ function downloadPDF() {
     const dotClass = typeEl?.querySelector('.dot')?.className || '';
     const dotColor = dotClass.includes('green') ? GREEN : dotClass.includes('red') ? ACCENT : GOLD;
 
-    setFill(SURFACE); doc.rect(x, fy, colW, CARD_H, 'F');
+    const titleLines = doc.splitTextToSize(titleEl?.textContent || '', contentW - 16);
+    const bodyLines = doc.splitTextToSize(bodyEl?.textContent || '', contentW - 16);
+    const cardH = Math.max(24, 12 + (titleLines.length * 4.2) + (bodyLines.length * 3.8));
+
+    ensureSpace(cardH + 6);
+
+    setFill(SURFACE); doc.rect(margin, y, contentW, cardH, 'F');
     setDraw([42,42,52]); doc.setLineWidth(0.2);
-    doc.rect(x, fy, colW, CARD_H, 'S');
-    setFill(dotColor); doc.rect(x, fy, 2, CARD_H, 'F');
+    doc.rect(margin, y, contentW, cardH, 'S');
+    setFill(dotColor); doc.rect(margin, y, 2, cardH, 'F');
 
     mono(6); setTextColor(dotColor);
-    doc.text((typeEl?.textContent || '').trim().toUpperCase(), x + 5, fy + 7);
+    doc.text((typeEl?.textContent || '').trim().toUpperCase(), margin + 6, y + 6);
 
     bold(8); setTextColor(IVORY);
-    const titleLines = doc.splitTextToSize(titleEl?.textContent || '', colW - 10);
-    doc.text(titleLines[0], x + 5, fy + 14);
+    doc.text(titleLines, margin + 6, y + 12);
 
-    reg(6.5); setTextColor(MUTED);
-    const bodyLines = doc.splitTextToSize(bodyEl?.textContent || '', colW - 10);
-    doc.text(bodyLines.slice(0, 3), x + 5, fy + 21);
+    reg(6.8); setTextColor(MUTED);
+    doc.text(bodyLines, margin + 6, y + 12 + (titleLines.length * 4.2) + 2);
+
+    y += cardH + 5;
   });
 
-  y += (CARD_H + 4) * 2 + 10;
+  y += 6;
 
   // ── NEW PAGE — SERVICES PITCH ──
   doc.addPage();
@@ -2398,6 +2448,7 @@ function downloadPDF() {
   // save
   const safeName = (bizName || 'brand').replace(/[^a-z0-9]/gi, '-').toLowerCase();
   doc.save(`pinnacle-brand-report-${safeName}.pdf`);
+  document.body.classList.remove('pdf-export');
 }
 </script>
 </body>
